@@ -17,6 +17,7 @@ type AuthInfo struct {
 	ChannelData string `json:"channel_data,omitempty"`
 }
 
+// Authenticate can handle user authentification for private and presence channels
 func (ua *UserAuthentication) Authenticate(channelName string, socketID string, data interface{}) (*AuthInfo, error) {
 
 	stringToSign := socketID + ":" + channelName
