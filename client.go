@@ -50,6 +50,7 @@ type UserInfo struct {
 }
 
 type Channel struct {
+	Client            *Client
 	Name              string
 	Occupied          bool `json:"occupied"`
 	UserCount         int  `json:"user_count",omitempty`
@@ -59,6 +60,20 @@ type Channel struct {
 func (c *Channel) String() string {
 	format := "[name: %s, occupied: %t, user count: %d, subscription count: %d]"
 	return fmt.Sprintf(format, c.Name, c.Occupied, c.UserCount, c.SubscriptionCount)
+}
+
+func (c *Channel) Authenticate(socketID string, data interface{}) (*AuthInfo, error) {
+
+	userAuthentication := &UserAuthentication{c.Client.key, c.Client.secret}
+
+	var authInfo *AuthInfo
+	authInfo, err := userAuthentication.Authenticate(c.Name, socketID, data)
+
+	if err != nil {
+		return nil, fmt.Errorf("pusher: Channel Authenticate failed: %s", err)
+	}
+
+	return authInfo, err
 }
 
 func NewClient(appid, key, secret string) *Client {
@@ -129,6 +144,7 @@ func (c *Client) Channel(name string, queryParameters map[string]string) (*Chann
 		return nil, fmt.Errorf("pusher: Channel failed: %s", err)
 	}
 
+	channel.Client = c
 	channel.Name = name
 
 	return channel, nil

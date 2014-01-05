@@ -103,3 +103,22 @@ func TestDefaultScheme(t *testing.T) {
 		t.Errorf("Scheme not set correctly")
 	}
 }
+
+func TestAuthenticate(t *testing.T) {
+	key := "278d425bdf160c739803"
+	secret := "7ad3773142a6692b25b8"
+
+	client := NewClient("1", key, secret)
+	channel := &Channel{client, "private-foobar", false, 0, 0}
+
+	authExpected := key + ":58df8b0c36d6982b82c3ecf6b4662e34fe8c25bba48f5369f135bf843651c3a4"
+	authInfo, _ := channel.Authenticate("1234.1234", nil)
+
+	if authExpected != authInfo.Auth {
+		t.Errorf("Authenticate(): Expected %s, got %s", authExpected, authInfo.Auth)
+	}
+
+	if "" != authInfo.ChannelData {
+		t.Errorf("Authenticate(): Expected %s, got %s", nil, authInfo.ChannelData)
+	}
+}
