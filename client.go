@@ -155,6 +155,20 @@ func (c *Client) Users(channelName string) (*UserList, error) {
 	return users, nil
 }
 
+func (c *Client) AuthenticateUser(channelName string, socketID string, data interface{}) (*AuthInfo, error) {
+
+	userAuthentication := &UserAuthentication{c.key, c.secret}
+
+	var authInfo *AuthInfo
+	authInfo, err := userAuthentication.Authenticate(channelName, socketID, data)
+
+	if err != nil {
+		return nil, fmt.Errorf("pusher: User authentication failed: %s", err)
+	}
+
+	return authInfo, err
+}
+
 func (c *Client) post(content []byte, fullUrl string, query string) error {
 	buffer := bytes.NewBuffer(content)
 
