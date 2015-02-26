@@ -17,6 +17,8 @@ import (
 
 func main() {
     client := pusher.NewClient("appId", "key", "secret", false)
+    // in the case of your need to use custom server endpoint
+    //client := pusher.NewCustomClient("appId", "key", "secret", "localhost:8080", "http")
 
     done := make(chan bool)
 

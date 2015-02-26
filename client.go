@@ -71,6 +71,16 @@ func NewClient(appid, key, secret string) *Client {
 	}
 }
 
+func NewCustomClient(appid, key, secret, host, scheme string) *Client {
+	return &Client{
+		appid:  appid,
+		key:    key,
+		secret: secret,
+		Host:   host,
+		Scheme: scheme,
+	}
+}
+
 func (c *Client) Publish(data, event string, channels ...string) error {
 	timestamp := c.stringTimestamp()
 
