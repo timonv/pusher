@@ -31,6 +31,22 @@ func verifyRequest(t *testing.T, prefix string, req *http.Request, method, path 
 	return
 }
 
+func verifyJSONRequest(t *testing.T, prefix string, req *http.Request, method, path string) (payload JSONPayload) {
+	if method != req.Method {
+		t.Errorf("%s: Expected method %s, got %s", prefix, method, req.Method)
+	}
+	if path != req.URL.Path {
+		t.Errorf("%s: Expected path '%s', got '%s'", prefix, path, req.URL.Path)
+	}
+
+	err := json.NewDecoder(req.Body).Decode(&payload)
+	if err != nil {
+		fmt.Println("Got error:", err)
+	}
+
+	return
+}
+
 func stringSlicesEqual(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -66,6 +82,49 @@ func TestPublish(t *testing.T) {
 	client := NewClient("1", "key", "secret")
 	client.Host = url.Host
 	err := client.Publish("data", "event", "mychannel", "c2")
+
+	if err != nil {
+		t.Errorf("Publish(): %v", err)
+	}
+}
+
+func TestPublishJSON(t *testing.T) {
+	jsonIn := map[string]interface{}{
+		"Foo": "wee",
+		"Bar": "baz",
+	}
+
+	server := setupTestServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		w.WriteHeader(200)
+		fmt.Fprintf(w, "{}")
+
+		payload := verifyJSONRequest(t, "Publish()", request, "POST", "/apps/1/events")
+
+		if payload.Name != "event" {
+			t.Errorf("Publish(): Expected body[name] = \"event\", got %q", payload.Name)
+		}
+		if !reflect.DeepEqual(payload.Channels, []string{"mychannel", "c2"}) {
+			t.Errorf("Publish(): Expected body[channels] = [mychannel c2], got %+v", payload.Channels)
+		}
+		jsonOut := payload.Data.(map[string]interface{})
+		for k := range jsonIn {
+			if _, found := jsonOut[k]; !found {
+				t.Errorf("Key %s not found", k)
+				continue
+			}
+			if jsonIn[k] != jsonOut[k] {
+				t.Errorf("Key %s, expected %s, got %s", k, jsonIn[k], jsonOut[k])
+			}
+		}
+	}))
+	defer server.Close()
+
+	url, _ := url.Parse(server.URL)
+
+	client := NewClient("1", "key", "secret")
+	client.Host = url.Host
+
+	err := client.PublishJSON(jsonIn, "event", "mychannel", "c2")
 
 	if err != nil {
 		t.Errorf("Publish(): %v", err)
