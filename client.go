@@ -28,6 +28,12 @@ type Payload struct {
 	Data     string   `json:"data"`
 }
 
+type JSONPayload struct {
+	Name     string      `json:"name"`
+	Channels []string    `json:"channels"`
+	Data     interface{} `json:"data"`
+}
+
 type ChannelList struct {
 	List map[string]ChannelInfo `json:"channels"`
 }
@@ -75,6 +81,25 @@ func (c *Client) Publish(data, event string, channels ...string) error {
 	timestamp := c.stringTimestamp()
 
 	content, err := c.jsonifyData(data, event, channels)
+	if err != nil {
+		return fmt.Errorf("pusher: Publish failed: %s", err)
+	}
+
+	signature := Signature{c.key, c.secret, "POST", c.publishPath(), timestamp, AuthVersion, content, nil}
+
+	err = c.post(content, c.fullUrl(c.publishPath()), signature.EncodedQuery())
+
+	return err
+}
+
+func (c *Client) PublishJSON(data interface{}, event string, channels ...string) error {
+	timestamp := c.stringTimestamp()
+
+	content, err := json.Marshal(JSONPayload{
+		Name:     event,
+		Channels: channels,
+		Data:     data,
+	})
 	if err != nil {
 		return fmt.Errorf("pusher: Publish failed: %s", err)
 	}
